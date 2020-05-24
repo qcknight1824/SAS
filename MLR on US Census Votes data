@@ -1,0 +1,38 @@
+proc import
+datafile='\\apporto.com\dfs\UNCC\Users\mbejos_uncc\Desktop\6201 SAS\Regression\Assignment 1\Votes.xlsx' 
+DBMS=xlsx out=votes_edit replace; 
+
+/*proc univariate for raw data(savings/poverty variables)*/ 
+proc univariate data=votes normal plot;
+var savings poverty VOTES; run; 
+
+/*raw votes data output*/ 
+proc print data=votes; run; 
+
+data mod_votes; set votes; LINCOME = log(INCOME); run;
+
+proc print data=mod_votes;run;
+
+/*Sampling 500/232 using random sampling smethod*/ 
+proc surveyselect data=mod_votes
+method=srs n=500
+out=sample outall;
+run;
+
+proc print data=sample; run;
+
+data votetrain; set sample; if (selected =1) then output;run; 
+
+data votetest; set sample; if (selected =0) then output;run; 
+
+proc print data=votetrain; run; 
+
+/*Developing Regression model using votetrain dataset*/
+proc reg data=votetrain; model VOTES = LINCOME SAVINGS FEMALE DENSITY POVERTY VETERANS / tol vif collin; 
+plot r.*p.; 
+run;
+
+/*Developing Regression model using votetest dataset*/
+proc reg data=votetest; model VOTES = LINCOME SAVINGS FEMALE DENSITY POVERTY VETERANS / tol vif collin; 
+plot r.*p.; 
+run;
